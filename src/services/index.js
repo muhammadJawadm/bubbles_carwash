@@ -12,6 +12,7 @@ export {
     updateSale,
     markSaleAsPaid,
     deleteSale,
+    deleteAllSales,
     getSalesByCustomer
 } from './salesService';
 
@@ -46,5 +47,6 @@ export {
     getOverdueAccounts,
     markAccountAsPaid,
     getAccountBalances,
-    getAccountCustomerNames
+    getAccountCustomerNames,
+    deleteAccount
 } from './accountsService';

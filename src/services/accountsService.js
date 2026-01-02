@@ -144,12 +144,26 @@ export const getAccountBalances = async () => {
 };
 
 export const getAccountCustomerNames = async () => {
+    // Only get customers who actually have account records
     const { data, error } = await supabase
-        .from('web_customers')
-        .select('name')
-        .eq('is_account_customer', true)
-        .order('name');
+        .from('web_accounts')
+        .select('web_customers!inner(name)')
+        .order('web_customers(name)');
 
     if (error) throw error;
-    return data.map(c => c.name);
+
+    // Get unique customer names
+    const uniqueNames = [...new Set(data.map(item => item.web_customers.name))];
+    return uniqueNames.sort();
 };
+
+export const deleteAccount = async (accountId) => {
+    const { error } = await supabase
+        .from('web_accounts')
+        .delete()
+        .eq('id', accountId);
+
+    if (error) throw error;
+    return true;
+};
+

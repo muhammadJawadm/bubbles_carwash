@@ -148,6 +148,29 @@ export const deleteSale = async (id) => {
     return true;
 };
 
+//Delete all sales
+export const deleteAllSales = async () => {
+    const { data: rows, error: fetchError } = await supabase
+        .from('web_sales')
+        .select('id');
+    if (fetchError) {
+        console.error('Error fetching sales:', fetchError);
+        throw fetchError;
+    }
+    if (rows.length === 0) {
+        console.error('No sales found for delete');
+        throw new Error('No sales found for delete');
+    }
+    const ids = rows.map(row => row.id);
+    const { error } = await supabase
+        .from('web_sales')
+        .delete()
+        .in('id', ids);
+
+    if (error) throw error;
+    return true;
+};
+
 /**
  * Get sales by customer name
  */

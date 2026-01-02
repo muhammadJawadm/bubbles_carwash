@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getSales } from '../services';
+import { getSales, deleteSale, deleteAllSales } from '../services';
 import { formatAmount } from '../utils/formatters';
 import { exportCsv } from '../utils/exportCsv';
 import Badge from './ui/Badge';
+import { FiTrash } from 'react-icons/fi';
 
 export default function AllRecords({ refreshTrigger }) {
     const [sales, setSales] = useState([]);
@@ -58,6 +59,39 @@ export default function AllRecords({ refreshTrigger }) {
         if (type === 'cash') return <Badge type="cash">Cash</Badge>;
         if (type === 'card') return <Badge type="card">Card</Badge>;
         return <Badge type="account">30-Day</Badge>;
+    };
+    const handleDelete = async (id) => {
+        try {
+            setLoading(true);
+            await deleteSale(id);
+            fetchAllSales();
+        } catch (error) {
+            console.error('Error deleting sale:', error);
+            alert('Failed to delete sale');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteAllSales = async () => {
+        const confirmed = window.confirm(
+            'Are you sure you want to delete ALL sales records? This action cannot be undone.'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await deleteAllSales();
+            fetchAllSales();
+        } catch (error) {
+            console.error('Error deleting all sales:', error);
+            alert('Failed to delete all sales');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleExportCsv = () => {
@@ -115,6 +149,15 @@ export default function AllRecords({ refreshTrigger }) {
             >
                 Export CSV ({filteredSales.length} records)
             </button>
+            <button
+                className="secondary gap-2"
+                style={{ marginTop: '10px' }}
+                onClick={handleDeleteAllSales}
+                disabled={filteredSales.length === 0}
+            >
+                <FiTrash className="text-lg" />
+                Delete All Sales
+            </button>
 
             {loading ? (
                 <p>Loading...</p>
@@ -129,6 +172,7 @@ export default function AllRecords({ refreshTrigger }) {
                             <th>Service</th>
                             <th>Payment</th>
                             <th>Amount</th>
+                            <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -152,6 +196,14 @@ export default function AllRecords({ refreshTrigger }) {
                                         {s.discount && s.discount > 0 && (
                                             <div className="small">Disc: -{formatAmount(s.discount)}</div>
                                         )}
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="secondary text-red-500 hover:text-red-600 "
+                                            onClick={() => handleDelete(s.id)}
+                                        >
+                                            <FiTrash className="text-lg" />
+                                        </button>
                                     </td>
                                 </tr>
                             ))

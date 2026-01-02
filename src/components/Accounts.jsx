@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getAccountCustomerNames, getAccountsByCustomerName, markAccountAsPaid } from '../services';
+import { getAccountCustomerNames, getAccountsByCustomerName, markAccountAsPaid, deleteAccount } from '../services';
 import { formatAmount } from '../utils/formatters';
 import Badge from './ui/Badge';
 import SummaryBox from './ui/SummaryBox';
+import { FiTrash } from 'react-icons/fi';
 
 export default function Accounts({ refreshTrigger }) {
     const [customers, setCustomers] = useState([]);
@@ -61,6 +62,30 @@ export default function Accounts({ refreshTrigger }) {
         }
     };
 
+    const handleDeleteAccount = async (accountId) => {
+        if (!confirm('Delete this item?')) return;
+
+        try {
+            await deleteAccount(accountId);
+            alert('Deleted ✅');
+
+            // Refresh the accounts for current customer
+            await fetchCustomerAccounts();
+
+            // Refresh customer list to update dropdown
+            await fetchCustomerNames();
+
+            // If no accounts remain for this customer, clear the selection
+            const result = await getAccountsByCustomerName(selectedCustomer);
+            if (result.accounts.length === 0) {
+                setSelectedCustomer('');
+            }
+        } catch (error) {
+            console.error('Error deleting:', error);
+            alert('Failed to delete: ' + error.message);
+        }
+    };
+
     return (
         <section className="tab active">
             <h2>30-Day Account Customers</h2>
@@ -112,6 +137,7 @@ export default function Accounts({ refreshTrigger }) {
                             <th>Amount</th>
                             <th>Status</th>
                             <th>Mark Paid</th>
+                            <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -147,6 +173,14 @@ export default function Accounts({ refreshTrigger }) {
                                                 Paid
                                             </button>
                                         )}
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="secondary"
+                                            onClick={() => handleDeleteAccount(account.id)}
+                                        >
+                                            <FiTrash className="w-4 h-4" />
+                                        </button>
                                     </td>
                                 </tr>
                             ))

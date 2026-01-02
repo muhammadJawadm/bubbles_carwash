@@ -13,6 +13,7 @@ export {
     markSaleAsPaid,
     deleteSale,
     deleteAllSales,
+    deleteSaleUsingId,
     getSalesByCustomer
 } from './salesService';
 

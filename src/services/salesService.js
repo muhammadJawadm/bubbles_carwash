@@ -148,6 +148,16 @@ export const deleteSale = async (id) => {
     return true;
 };
 
+export const deleteSaleUsingId = async (id) => {
+    const { error } = await supabase
+        .from('web_sales')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+    return true;
+};
+
 //Delete all sales
 export const deleteAllSales = async () => {
     const { data: rows, error: fetchError } = await supabase

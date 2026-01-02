@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSales, deleteSale, deleteAllSales } from '../services';
+import { getSales, deleteSaleUsingId, deleteAllSales } from '../services';
 import { formatAmount } from '../utils/formatters';
 import { exportCsv } from '../utils/exportCsv';
 import Badge from './ui/Badge';
@@ -63,7 +63,7 @@ export default function AllRecords({ refreshTrigger }) {
     const handleDelete = async (id) => {
         try {
             setLoading(true);
-            await deleteSale(id);
+            await deleteSaleUsingId(id);
             fetchAllSales();
         } catch (error) {
             console.error('Error deleting sale:', error);

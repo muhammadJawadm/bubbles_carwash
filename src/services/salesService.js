@@ -142,7 +142,7 @@ export const deleteSale = async (id) => {
     const { error } = await supabase
         .from('web_sales')
         .delete()
-        .eq('id', id);
+        .eq('customer_id', id);
 
     if (error) throw error;
     return true;

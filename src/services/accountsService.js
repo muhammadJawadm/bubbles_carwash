@@ -161,7 +161,7 @@ export const deleteAccount = async (accountId) => {
     const { error } = await supabase
         .from('web_accounts')
         .delete()
-        .eq('id', accountId);
+        .eq('customer_id', accountId);
 
     if (error) throw error;
     return true;

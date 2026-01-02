@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAccountCustomerNames, getAccountsByCustomerName, markAccountAsPaid, deleteAccount } from '../services';
+import { getAccountCustomerNames, getAccountsByCustomerName, markAccountAsPaid, deleteAccount, deleteSale } from '../services';
 import { formatAmount } from '../utils/formatters';
 import Badge from './ui/Badge';
 import SummaryBox from './ui/SummaryBox';
@@ -67,6 +67,7 @@ export default function Accounts({ refreshTrigger }) {
 
         try {
             await deleteAccount(accountId);
+            await deleteSale(accountId);
             alert('Deleted ✅');
 
             // Refresh the accounts for current customer
@@ -177,7 +178,7 @@ export default function Accounts({ refreshTrigger }) {
                                     <td>
                                         <button
                                             className="secondary"
-                                            onClick={() => handleDeleteAccount(account.id)}
+                                            onClick={() => handleDeleteAccount(account.customer_id)}
                                         >
                                             <FiTrash className="w-4 h-4" />
                                         </button>

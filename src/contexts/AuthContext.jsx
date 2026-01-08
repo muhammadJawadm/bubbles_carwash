@@ -18,22 +18,53 @@ export const AuthProvider = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        // Check current session on mount
-        checkUser();
+        let isMounted = true;
+
+        // Check current session on mount with timeout protection
+        const initAuth = async () => {
+            try {
+                // Add a timeout to prevent infinite loading
+                const timeoutId = setTimeout(() => {
+                    if (isMounted) {
+                        console.warn('Auth check timed out');
+                        setLoading(false);
+                    }
+                }, 5000); // 5 second timeout
+
+                await checkUser();
+                clearTimeout(timeoutId);
+            } catch (error) {
+                console.error('Init auth error:', error);
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        initAuth();
 
         // Listen for auth state changes
         const { data: authListener } = onAuthStateChange(async (event, session) => {
+            if (!isMounted) return;
+
+            console.log('Auth state changed:', event);
+
             if (event === 'SIGNED_IN') {
                 await checkUser();
             } else if (event === 'SIGNED_OUT') {
                 setUser(null);
                 setAdminData(null);
                 setIsAdmin(false);
+                setLoading(false);
+            } else if (event === 'TOKEN_REFRESHED') {
+                // Session refreshed, check user again
+                await checkUser();
             }
         });
 
         // Cleanup subscription
         return () => {
+            isMounted = false;
             authListener?.subscription?.unsubscribe();
         };
     }, []);
@@ -41,7 +72,15 @@ export const AuthProvider = ({ children }) => {
     const checkUser = async () => {
         try {
             setLoading(true);
-            const result = await verifyAdminAccess();
+
+            // Add timeout wrapper
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Auth check timeout')), 5000);
+            });
+
+            const authPromise = verifyAdminAccess();
+
+            const result = await Promise.race([authPromise, timeoutPromise]);
 
             if (result.isAuthenticated && result.isAdmin) {
                 setUser(result.user);

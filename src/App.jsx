@@ -5,6 +5,7 @@ import NewService from './components/NewService';
 import DailySales from './components/DailySales';
 import Accounts from './components/Accounts';
 import AllRecords from './components/AllRecords';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
   };
 
   return (
-    <>
+    <ProtectedRoute>
       <Header />
       <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -27,7 +28,7 @@ function App() {
         {activeTab === 'accounts' && <Accounts refreshTrigger={refreshTrigger} />}
         {activeTab === 'all' && <AllRecords refreshTrigger={refreshTrigger} />}
       </main>
-    </>
+    </ProtectedRoute>
   );
 }
 

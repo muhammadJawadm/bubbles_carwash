@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
                         console.warn('Auth check timed out');
                         setLoading(false);
                     }
-                }, 5000); // 5 second timeout
+                }, 2000); // 5 second timeout
 
                 await checkUser();
                 clearTimeout(timeoutId);
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
 
             // Add timeout wrapper
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Auth check timeout')), 5000);
+                setTimeout(() => reject(new Error('Auth check timeout')), 2000);
             });
 
             const authPromise = verifyAdminAccess();

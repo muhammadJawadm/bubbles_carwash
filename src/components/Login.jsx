@@ -1,14 +1,11 @@
 import { useState } from 'react';
-import { signIn } from '../services/authService';
-import { checkAdminUser } from '../services/authService';
-import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../utils/supabase';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const { checkUser } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,8 +13,11 @@ function Login() {
         setLoading(true);
 
         try {
-            // First, sign in with Supabase Auth
-            const { user, session, error: signInError } = await signIn(email, password);
+            // Sign in with Supabase
+            const { data, error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
             if (signInError) {
                 setError(signInError.message || 'Failed to sign in. Please check your credentials.');
@@ -25,29 +25,30 @@ function Login() {
                 return;
             }
 
-            if (!user) {
+            if (!data.user) {
                 setError('Authentication failed. Please try again.');
                 setLoading(false);
                 return;
             }
 
-            // Then, check if user exists in admin-user table
-            const { isAdmin, error: adminError } = await checkAdminUser(user.id);
+            // Check if user is admin
+            const { data: adminData, error: adminError } = await supabase
+                .from('admin-user')
+                .select('*')
+                .eq('user_id', data.user.id)
+                .eq('is_active', true)
+                .single();
 
-            if (adminError) {
-                setError('Error verifying admin access. Please contact support.');
-                setLoading(false);
-                return;
-            }
-
-            if (!isAdmin) {
+            if (adminError || !adminData) {
+                // Sign out if not admin
+                await supabase.auth.signOut();
                 setError('Access denied. You are not authorized to access this system.');
                 setLoading(false);
                 return;
             }
 
-            // If both checks pass, refresh auth context
-            await checkUser();
+            // Success - auth state change will handle the rest
+            setLoading(false);
 
         } catch (err) {
             console.error('Login error:', err);

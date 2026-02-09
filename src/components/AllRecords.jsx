@@ -58,6 +58,8 @@ export default function AllRecords({ refreshTrigger }) {
     const paymentBadge = (type) => {
         if (type === 'cash') return <Badge type="cash">Cash</Badge>;
         if (type === 'card') return <Badge type="card">Card</Badge>;
+        if (type === 'paylater') return <Badge type="paylater">Pay Later</Badge>;
+        if (type === 'paid') return <Badge type="paid">Paid</Badge>;
         return <Badge type="account">30-Day</Badge>;
     };
     const handleDelete = async (id) => {
@@ -137,6 +139,7 @@ export default function AllRecords({ refreshTrigger }) {
                         <option value="cash">Cash</option>
                         <option value="card">Card</option>
                         <option value="account">30-Day Account</option>
+                        <option value="paylater">Pay Later</option>
                     </select>
                 </div>
             </div>

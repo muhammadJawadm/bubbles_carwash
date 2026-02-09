@@ -117,7 +117,7 @@ textarea {
   gap: 8px;
 }
 
-.row > div {
+.row>div {
   flex: 1;
 }
 
@@ -186,6 +186,10 @@ th {
 
 .badge.account {
   background: #c97a00;
+}
+
+.badge.paylater {
+  background: #8b5cf6;
 }
 
 .badge.unpaid {
@@ -294,12 +298,16 @@ th {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
+
   33% {
     transform: translate(30px, -30px) scale(1.1);
   }
+
   66% {
     transform: translate(-20px, 20px) scale(0.9);
   }
@@ -323,6 +331,7 @@ th {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -347,9 +356,12 @@ th {
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -425,9 +437,19 @@ th {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  75% {
+    transform: translateX(10px);
+  }
 }
 
 .error-icon {

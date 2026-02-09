@@ -224,6 +224,9 @@ export default function NewService({ onSaleCreated }) {
                     <Pill value="account" active={paymentType === 'account'} onClick={setPaymentType}>
                         30-Day Account
                     </Pill>
+                    <Pill value="paylater" active={paymentType === 'paylater'} onClick={setPaymentType}>
+                        Pay Later
+                    </Pill>
                 </div>
 
                 <label htmlFor="notes">Notes (optional)</label>

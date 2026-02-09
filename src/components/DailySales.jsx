@@ -37,6 +37,8 @@ export default function DailySales({ refreshTrigger }) {
     const paymentBadge = (type) => {
         if (type === 'cash') return <Badge type="cash">Cash</Badge>;
         if (type === 'card') return <Badge type="card">Card</Badge>;
+        if (type === 'paylater') return <Badge type="paylater">Pay Later</Badge>;
+        if (type === 'paid') return <Badge type="paid">Paid</Badge>;
         return <Badge type="account">30-Day</Badge>;
     };
 

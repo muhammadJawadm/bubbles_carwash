@@ -98,6 +98,66 @@
     line-height: 1.5;
 }
 
+/* Payment method section */
+.modal-payment {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.modal-payment-label {
+    font-size: 15px;
+    color: #555;
+    margin: 0 0 14px 0;
+}
+
+.modal-payment-label strong {
+    color: #222;
+    font-weight: 700;
+}
+
+.modal-payment-options {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.payment-btn {
+    flex: 1;
+    max-width: 160px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: #f9f9f9;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.payment-btn svg {
+    font-size: 16px;
+}
+
+.payment-btn:hover {
+    border-color: #1a73c9;
+    color: #1a73c9;
+    background: #eef4fd;
+}
+
+.payment-btn.active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #0b4f8f, #1a73c9);
+    color: white;
+    box-shadow: 0 4px 14px rgba(11, 79, 143, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Action buttons */
 .modal-actions {
     display: flex;
     gap: 12px;

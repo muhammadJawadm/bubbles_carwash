@@ -45,16 +45,16 @@ export default function PayLater({ refreshTrigger }) {
         setModalOpen(true);
     };
 
-    const handleConfirmPayment = async () => {
-        if (!selectedSale) return;
+    const handleConfirmPayment = async (paymentMethod) => {
+        if (!selectedSale || !paymentMethod) return;
 
         try {
             setLoading(true);
             await updateSale(selectedSale.id, {
-                payment_type: 'paid',
+                payment_type: paymentMethod,
                 is_paid: true
             });
-            alert('Payment updated to paid ✅');
+            alert(`Payment updated to ${paymentMethod} ✅`);
             fetchPayLaterSales(); // Refresh the list
             setSelectedSale(null);
         } catch (error) {
@@ -91,7 +91,7 @@ export default function PayLater({ refreshTrigger }) {
                     <tbody>
                         {payLaterSales.length === 0 ? (
                             <tr>
-                                <td colSpan="7" style={{ textAlign: 'center' }}>
+                                <td colSpan="8" style={{ textAlign: 'center' }}>
                                     No PayLater records found
                                 </td>
                             </tr>
@@ -140,6 +140,7 @@ export default function PayLater({ refreshTrigger }) {
                 onConfirm={handleConfirmPayment}
                 title="Confirm Payment"
                 message={selectedSale ? `Mark payment as paid for ${selectedSale.customer_name}?` : ''}
+                showPaymentOptions={true}
                 confirmText="Mark as Paid"
                 cancelText="Cancel"
             />

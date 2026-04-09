@@ -11,6 +11,8 @@ export default function Accounts({ refreshTrigger }) {
     const [accounts, setAccounts] = useState([]);
     const [summary, setSummary] = useState({ outstanding: 0, unpaidCount: 0 });
     const [loading, setLoading] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkLoading, setBulkLoading] = useState(false);
 
     useEffect(() => {
         fetchCustomerNames();
@@ -23,6 +25,7 @@ export default function Accounts({ refreshTrigger }) {
             setAccounts([]);
             setSummary({ outstanding: 0, unpaidCount: 0 });
         }
+        setSelectedIds([]);
     }, [selectedCustomer, refreshTrigger]);
 
     const fetchCustomerNames = async () => {
@@ -55,7 +58,7 @@ export default function Accounts({ refreshTrigger }) {
         try {
             await markAccountAsPaid(accountId);
             alert('Marked as paid ✅');
-            fetchCustomerAccounts(); // Refresh
+            fetchCustomerAccounts();
         } catch (error) {
             console.error('Error marking as paid:', error);
             alert('Failed to mark as paid: ' + error.message);
@@ -70,13 +73,9 @@ export default function Accounts({ refreshTrigger }) {
             await deleteSale(accountId);
             alert('Deleted ✅');
 
-            // Refresh the accounts for current customer
             await fetchCustomerAccounts();
-
-            // Refresh customer list to update dropdown
             await fetchCustomerNames();
 
-            // If no accounts remain for this customer, clear the selection
             const result = await getAccountsByCustomerName(selectedCustomer);
             if (result.accounts.length === 0) {
                 setSelectedCustomer('');
@@ -84,6 +83,44 @@ export default function Accounts({ refreshTrigger }) {
         } catch (error) {
             console.error('Error deleting:', error);
             alert('Failed to delete: ' + error.message);
+        }
+    };
+
+    // ── Bulk selection helpers ──────────────────────────────────────────────
+    const unpaidAccounts = accounts.filter(a => !a.is_paid);
+    const allUnpaidSelected =
+        unpaidAccounts.length > 0 &&
+        unpaidAccounts.every(a => selectedIds.includes(a.id));
+
+    const toggleSelectAll = () => {
+        if (allUnpaidSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(unpaidAccounts.map(a => a.id));
+        }
+    };
+
+    const toggleSelectOne = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleMarkSelectedPaid = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Mark ${selectedIds.length} item(s) as paid?`)) return;
+
+        setBulkLoading(true);
+        try {
+            await Promise.all(selectedIds.map(id => markAccountAsPaid(id)));
+            alert(`${selectedIds.length} item(s) marked as paid ✅`);
+            setSelectedIds([]);
+            fetchCustomerAccounts();
+        } catch (error) {
+            console.error('Error bulk marking as paid:', error);
+            alert('Failed to mark some items as paid: ' + error.message);
+        } finally {
+            setBulkLoading(false);
         }
     };
 
@@ -126,12 +163,44 @@ export default function Accounts({ refreshTrigger }) {
                 )}
             </SummaryBox>
 
+            {/* Bulk action toolbar — only visible when at least one row is checked */}
+            {selectedIds.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <span className="small">{selectedIds.length} item(s) selected</span>
+                    <button
+                        className="secondary"
+                        onClick={handleMarkSelectedPaid}
+                        disabled={bulkLoading}
+                    >
+                        {bulkLoading ? 'Processing…' : `Mark ${selectedIds.length} as Paid ✅`}
+                    </button>
+                    <button
+                        className="secondary"
+                        onClick={() => setSelectedIds([])}
+                        disabled={bulkLoading}
+                    >
+                        Clear Selection
+                    </button>
+                </div>
+            )}
+
             {loading ? (
                 <p>Loading...</p>
             ) : (
                 <table>
                     <thead>
                         <tr>
+                            {/* Select-all checkbox — only shown when there are unpaid rows */}
+                            <th style={{ width: '2.5rem', textAlign: 'center' }}>
+                                {unpaidAccounts.length > 0 && (
+                                    <input
+                                        type="checkbox"
+                                        title="Select all unpaid"
+                                        checked={allUnpaidSelected}
+                                        onChange={toggleSelectAll}
+                                    />
+                                )}
+                            </th>
                             <th>Date</th>
                             <th>Vehicle</th>
                             <th>Service</th>
@@ -144,13 +213,30 @@ export default function Accounts({ refreshTrigger }) {
                     <tbody>
                         {accounts.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center' }}>
+                                <td colSpan="8" style={{ textAlign: 'center' }}>
                                     {selectedCustomer ? 'No account entries found' : 'Select a customer'}
                                 </td>
                             </tr>
                         ) : (
                             accounts.map(account => (
-                                <tr key={account.id}>
+                                <tr
+                                    key={account.id}
+                                    style={
+                                        selectedIds.includes(account.id)
+                                            ? { background: 'rgba(var(--accent-rgb, 99,102,241), 0.08)' }
+                                            : {}
+                                    }
+                                >
+                                    {/* Per-row checkbox — only for unpaid rows */}
+                                    <td style={{ textAlign: 'center' }}>
+                                        {!account.is_paid && (
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(account.id)}
+                                                onChange={() => toggleSelectOne(account.id)}
+                                            />
+                                        )}
+                                    </td>
                                     <td>{account.web_sales?.service_date || '-'}</td>
                                     <td>
                                         {account.web_sales?.vehicle_registration ||

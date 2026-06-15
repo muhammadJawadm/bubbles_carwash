@@ -6,6 +6,7 @@ import DailySales from './components/DailySales';
 import Accounts from './components/Accounts';
 import PayLater from './components/PayLater';
 import AllRecords from './components/AllRecords';
+import Expense from './components/Expense';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -29,6 +30,7 @@ function App() {
         {activeTab === 'accounts' && <Accounts refreshTrigger={refreshTrigger} />}
         {activeTab === 'paylater' && <PayLater refreshTrigger={refreshTrigger} />}
         {activeTab === 'all' && <AllRecords refreshTrigger={refreshTrigger} />}
+        {activeTab === 'expense' && <Expense />}
       </main>
     </ProtectedRoute>
   );

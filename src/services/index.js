@@ -51,3 +51,22 @@ export {
     getAccountCustomerNames,
     deleteAccount
 } from './accountsService';
+
+// Expenses Service
+export {
+    addExpense,
+    getExpensesByMonth,
+    deleteExpense
+} from './expensesService';
+
+// Companies Service
+export {
+    getCompanies,
+    addCompany
+} from './companiesService';
+
+// Vehicles Service
+export {
+    getVehiclesByCompany,
+    addVehicle
+} from './vehiclesService';

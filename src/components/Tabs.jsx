@@ -4,7 +4,8 @@ export default function Tabs({ activeTab, onTabChange }) {
         { id: 'daily', label: 'Daily Sales' },
         { id: 'accounts', label: '30-Day Accounts' },
         { id: 'paylater', label: 'Pay Later' },
-        { id: 'all', label: 'All Records' }
+        { id: 'all', label: 'All Records' },
+        { id: 'expense', label: 'Expenses' }
     ];
 
     return (

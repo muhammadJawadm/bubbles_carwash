@@ -56,6 +56,7 @@ export {
 export {
     addExpense,
     getExpensesByMonth,
+    getExpensesByDateRange,
     deleteExpense
 } from './expensesService';
 

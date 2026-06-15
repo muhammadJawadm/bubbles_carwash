@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { addExpense, getExpensesByMonth } from '../services';
+import { addExpense, getExpensesByMonth, getExpensesByDateRange, deleteExpense, getSalesByDateRange } from '../services';
 import { formatAmount, todayStr } from '../utils/formatters';
 import SummaryBox from './ui/SummaryBox';
+import { FiTrash } from 'react-icons/fi';
 
 const EXPENSE_TYPES = [
     'Rent',
@@ -40,6 +41,15 @@ export default function Expense() {
     const [expenses, setExpenses] = useState([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [selected, setSelected] = useState(new Set());
+
+    // Profit section — independent date range
+    const firstOfMonth = `${currentYear}-${currentMonth}-01`;
+    const [profitStart, setProfitStart] = useState(firstOfMonth);
+    const [profitEnd, setProfitEnd] = useState(today);
+    const [profitRevenue, setProfitRevenue] = useState(null);
+    const [profitExpenses, setProfitExpenses] = useState(null);
+    const [loadingProfit, setLoadingProfit] = useState(false);
 
     const [expenseType, setExpenseType] = useState(EXPENSE_TYPES[0]);
     const [amount, setAmount] = useState('');
@@ -58,11 +68,33 @@ export default function Expense() {
             const data = await getExpensesByMonth(year, month);
             setExpenses(data);
             setTotal(data.reduce((acc, e) => acc + Number(e.amount || 0), 0));
+            setSelected(new Set());
         } catch (err) {
             console.error('Error fetching expenses:', err);
             alert('Failed to load expenses');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchProfitData = async () => {
+        if (!profitStart || !profitEnd || profitStart > profitEnd) {
+            alert('Please select a valid date range.');
+            return;
+        }
+        try {
+            setLoadingProfit(true);
+            const [salesData, expenseData] = await Promise.all([
+                getSalesByDateRange(profitStart, profitEnd),
+                getExpensesByDateRange(profitStart, profitEnd),
+            ]);
+            setProfitRevenue(salesData.reduce((acc, s) => acc + Number(s.final_amount || 0), 0));
+            setProfitExpenses(expenseData.reduce((acc, e) => acc + Number(e.amount || 0), 0));
+        } catch (err) {
+            console.error('Error fetching profit data:', err);
+            alert('Failed to calculate profit');
+        } finally {
+            setLoadingProfit(false);
         }
     };
 
@@ -87,6 +119,43 @@ export default function Expense() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleDeleteOne = async (id) => {
+        if (!window.confirm('Delete this expense? This cannot be undone.')) return;
+        try {
+            await deleteExpense(id);
+            await fetchExpenses();
+        } catch (err) {
+            console.error('Error deleting expense:', err);
+            alert('Failed to delete expense');
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selected.size === 0) return;
+        const label = `${selected.size} expense${selected.size > 1 ? 's' : ''}`;
+        if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+        try {
+            await Promise.all([...selected].map(id => deleteExpense(id)));
+            await fetchExpenses();
+        } catch (err) {
+            console.error('Error deleting expenses:', err);
+            alert('Failed to delete selected expenses');
+        }
+    };
+
+    const toggleSelect = (id) => {
+        setSelected(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const allSelected = expenses.length > 0 && selected.size === expenses.length;
+    const toggleSelectAll = () => {
+        setSelected(allSelected ? new Set() : new Set(expenses.map(e => e.id)));
     };
 
     const years = [];
@@ -171,6 +240,20 @@ export default function Expense() {
                 <div className="small">Total Records: {expenses.length}</div>
             </SummaryBox>
 
+            {/* ── Bulk delete toolbar ───────────────────────────────────── */}
+            {selected.size > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <span className="small">{selected.size} selected</span>
+                    <button
+                        className="secondary"
+                        onClick={handleDeleteSelected}
+                        style={{ color: '#c0392b', borderColor: '#c0392b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                        <FiTrash /> Delete Selected ({selected.size})
+                    </button>
+                </div>
+            )}
+
             {/* ── Expenses Table ────────────────────────────────────────── */}
             {loading ? (
                 <p>Loading…</p>
@@ -178,31 +261,124 @@ export default function Expense() {
                 <table>
                     <thead>
                         <tr>
+                            <th style={{ width: '36px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    onChange={toggleSelectAll}
+                                    disabled={expenses.length === 0}
+                                    title="Select all"
+                                />
+                            </th>
                             <th>Date</th>
                             <th>Expense Type</th>
                             <th>Amount</th>
                             <th>Notes</th>
+                            <th style={{ width: '48px' }}></th>
                         </tr>
                     </thead>
                     <tbody>
                         {expenses.length === 0 ? (
                             <tr>
-                                <td colSpan={4} style={{ textAlign: 'center' }}>
+                                <td colSpan={6} style={{ textAlign: 'center' }}>
                                     No expenses recorded for {monthLabel} {year}
                                 </td>
                             </tr>
                         ) : (
                             expenses.map(e => (
-                                <tr key={e.id}>
+                                <tr key={e.id} style={selected.has(e.id) ? { background: '#fef3f2' } : {}}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(e.id)}
+                                            onChange={() => toggleSelect(e.id)}
+                                        />
+                                    </td>
                                     <td>{e.expense_date}</td>
                                     <td>{e.expense_type}</td>
                                     <td>{formatAmount(e.amount)}</td>
                                     <td>{e.notes || '–'}</td>
+                                    <td>
+                                        <button
+                                            className="secondary"
+                                            onClick={() => handleDeleteOne(e.id)}
+                                            title="Delete"
+                                            style={{ color: '#c0392b', borderColor: 'transparent', padding: '4px 6px' }}
+                                        >
+                                            <FiTrash />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
+            )}
+
+            {/* ── Profit Summary ────────────────────────────────────────── */}
+            <h3 style={{ marginTop: '2rem', marginBottom: '0.75rem' }}>Profit Summary</h3>
+
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                <div>
+                    <label style={{ display: 'block', marginBottom: '0.25rem' }}>Start Date</label>
+                    <input
+                        type="date"
+                        value={profitStart}
+                        max={profitEnd}
+                        onChange={e => { setProfitStart(e.target.value); setProfitRevenue(null); setProfitExpenses(null); }}
+                    />
+                </div>
+                <div>
+                    <label style={{ display: 'block', marginBottom: '0.25rem' }}>End Date</label>
+                    <input
+                        type="date"
+                        value={profitEnd}
+                        min={profitStart}
+                        onChange={e => { setProfitEnd(e.target.value); setProfitRevenue(null); setProfitExpenses(null); }}
+                    />
+                </div>
+                <button className="primary" onClick={fetchProfitData} disabled={loadingProfit}>
+                    {loadingProfit ? 'Calculating…' : 'Calculate Profit'}
+                </button>
+            </div>
+
+            {profitRevenue !== null && profitExpenses !== null && (
+                <div style={{
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    padding: '1rem 1.25rem',
+                    background: '#f9fafb',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    maxWidth: '360px'
+                }}>
+                    <div style={{ fontSize: '0.85rem', color: '#555', marginBottom: '0.25rem' }}>
+                        Period: <strong>{profitStart} → {profitEnd}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Total Revenue</span>
+                        <strong style={{ color: '#0b8f39' }}>{formatAmount(profitRevenue)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Total Expenses</span>
+                        <strong style={{ color: '#c0392b' }}>{formatAmount(profitExpenses)}</strong>
+                    </div>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        borderTop: '1px solid #ddd',
+                        paddingTop: '0.5rem',
+                        marginTop: '0.25rem',
+                        fontSize: '1rem',
+                        fontWeight: '700'
+                    }}>
+                        <span>Net Profit</span>
+                        <span style={{ color: profitRevenue - profitExpenses >= 0 ? '#0b8f39' : '#c0392b' }}>
+                            {formatAmount(profitRevenue - profitExpenses)}
+                        </span>
+                    </div>
+                </div>
             )}
         </section>
     );

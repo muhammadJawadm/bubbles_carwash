@@ -33,6 +33,18 @@ export const getExpensesByMonth = async (year, month) => {
     return data;
 };
 
+export const getExpensesByDateRange = async (startDate, endDate) => {
+    const { data, error } = await supabase
+        .from('web_expenses')
+        .select('*')
+        .gte('expense_date', startDate)
+        .lte('expense_date', endDate)
+        .order('expense_date', { ascending: false });
+
+    if (error) throw error;
+    return data;
+};
+
 export const deleteExpense = async (id) => {
     const { error } = await supabase
         .from('web_expenses')

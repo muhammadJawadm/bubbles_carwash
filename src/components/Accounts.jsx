@@ -87,16 +87,15 @@ export default function Accounts({ refreshTrigger }) {
     };
 
     // ── Bulk selection helpers ──────────────────────────────────────────────
-    const unpaidAccounts = accounts.filter(a => !a.is_paid);
-    const allUnpaidSelected =
-        unpaidAccounts.length > 0 &&
-        unpaidAccounts.every(a => selectedIds.includes(a.id));
+    const allSelected =
+        accounts.length > 0 &&
+        accounts.every(a => selectedIds.includes(a.id));
 
     const toggleSelectAll = () => {
-        if (allUnpaidSelected) {
+        if (allSelected) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(unpaidAccounts.map(a => a.id));
+            setSelectedIds(accounts.map(a => a.id));
         }
     };
 
@@ -119,6 +118,29 @@ export default function Accounts({ refreshTrigger }) {
         } catch (error) {
             console.error('Error bulk marking as paid:', error);
             alert('Failed to mark some items as paid: ' + error.message);
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Delete ${selectedIds.length} selected item(s)? This cannot be undone.`)) return;
+
+        setBulkLoading(true);
+        try {
+            const selectedAccounts = accounts.filter(a => selectedIds.includes(a.id));
+            const uniqueCustomerIds = [...new Set(selectedAccounts.map(a => a.customer_id))];
+            await Promise.all(uniqueCustomerIds.flatMap(cid => [deleteAccount(cid), deleteSale(cid)]));
+            alert(`${selectedIds.length} item(s) deleted ✅`);
+            setSelectedIds([]);
+            await fetchCustomerAccounts();
+            await fetchCustomerNames();
+            const result = await getAccountsByCustomerName(selectedCustomer);
+            if (result.accounts.length === 0) setSelectedCustomer('');
+        } catch (error) {
+            console.error('Error deleting selected:', error);
+            alert('Failed to delete: ' + error.message);
         } finally {
             setBulkLoading(false);
         }
@@ -176,6 +198,14 @@ export default function Accounts({ refreshTrigger }) {
                     </button>
                     <button
                         className="secondary"
+                        onClick={handleDeleteSelected}
+                        disabled={bulkLoading}
+                        style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                    >
+                        {bulkLoading ? 'Processing…' : `Delete Selected (${selectedIds.length})`}
+                    </button>
+                    <button
+                        className="secondary"
                         onClick={() => setSelectedIds([])}
                         disabled={bulkLoading}
                     >
@@ -190,13 +220,12 @@ export default function Accounts({ refreshTrigger }) {
                 <table>
                     <thead>
                         <tr>
-                            {/* Select-all checkbox — only shown when there are unpaid rows */}
                             <th style={{ width: '2.5rem', textAlign: 'center' }}>
-                                {unpaidAccounts.length > 0 && (
+                                {accounts.length > 0 && (
                                     <input
                                         type="checkbox"
-                                        title="Select all unpaid"
-                                        checked={allUnpaidSelected}
+                                        title="Select all"
+                                        checked={allSelected}
                                         onChange={toggleSelectAll}
                                     />
                                 )}
@@ -227,15 +256,12 @@ export default function Accounts({ refreshTrigger }) {
                                             : {}
                                     }
                                 >
-                                    {/* Per-row checkbox — only for unpaid rows */}
                                     <td style={{ textAlign: 'center' }}>
-                                        {!account.is_paid && (
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(account.id)}
-                                                onChange={() => toggleSelectOne(account.id)}
-                                            />
-                                        )}
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(account.id)}
+                                            onChange={() => toggleSelectOne(account.id)}
+                                        />
                                     </td>
                                     <td>{account.web_sales?.service_date || '-'}</td>
                                     <td>

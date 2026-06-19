@@ -194,7 +194,7 @@ export default function Accounts({ refreshTrigger }) {
                         onClick={handleMarkSelectedPaid}
                         disabled={bulkLoading}
                     >
-                        {bulkLoading ? 'Processing…' : `Mark ${selectedIds.length} as Paid ✅`}
+                        {bulkLoading ? 'Processing…' : `Mark all items as Paid ✅`}
                     </button>
                     <button
                         className="secondary"
